@@ -1,0 +1,1 @@
+A full-stack multi-event management platform with role-based access, real-time team formation, QR check-in system, and multi-channel notifications. Built with vanilla JS, Tailwind CSS, and modern web APIs.
