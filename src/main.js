@@ -144,13 +144,6 @@ window.toggleAuthMode = () => {
     }
 };
 
-window.toggleNotifications = () => {
-    state.currentView = 'notifications';
-    window.location.hash = '#notifications';
-    state.notifications = state.notifications.map(n => ({ ...n, read: true }));
-    renderApp();
-};
-
 window.loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, googleProvider);
