@@ -47,24 +47,6 @@ export function renderParticipantDashboard() {
                 </div>
             </div>
 
-            <!-- Announcements -->
-            <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Announcements</h3>
-                </div>
-                <div class="p-6 space-y-4">
-                    ${state.notifications.length === 0 ? `
-                        <p class="text-gray-500 text-center py-4">No announcements yet.</p>
-                    ` : state.notifications.slice(0, 3).map(n => `
-                        <div class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700">
-                            <h4 class="font-bold text-blue-600 dark:text-blue-400 mb-1">${n.title}</h4>
-                            <p class="text-gray-600 dark:text-gray-300 text-sm">${n.message}</p>
-                            <p class="text-[10px] text-gray-400 mt-2">${n.time}</p>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-
             <!-- Personal Schedule / My Events -->
             <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div class="p-6 border-b border-gray-100 dark:border-gray-700">

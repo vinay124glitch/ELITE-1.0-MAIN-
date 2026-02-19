@@ -144,6 +144,13 @@ window.toggleAuthMode = () => {
     }
 };
 
+window.toggleNotifications = () => {
+    state.currentView = 'notifications';
+    window.location.hash = '#notifications';
+    state.notifications = state.notifications.map(n => ({ ...n, read: true }));
+    renderApp();
+};
+
 window.loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, googleProvider);
@@ -591,14 +598,6 @@ function renderLoginOverlay() {
         <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
     `;
 }
-
-window.toggleNotifications = () => {
-    if (state.currentUser.role === 'admin') {
-        window.navigate('notifications');
-    } else {
-        showToast('Only administrators can access the full notification center.', 'info');
-    }
-};
 
 function renderView() {
     if (state.currentUser.role === 'admin') {
