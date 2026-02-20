@@ -52,14 +52,26 @@ export function renderEventsManagement() {
                                 </div>
                             </div>
                             
-                            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${(event.registered / event.maxParticipants) * 100}%"></div>
+                            <div class="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                <div class="flex-1 mr-4">
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${(event.registered / (event.maxParticipants || 1)) * 100}%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="window.showEditEventModal('${event.id}')" class="text-blue-500 hover:text-blue-700 transition-colors p-2" title="Edit Event">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="window.deleteEvent('${event.id}')" class="text-red-500 hover:text-red-700 transition-colors p-2" title="Delete Event">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `).join('')}
+
+
             </div>
         </div>
     `;

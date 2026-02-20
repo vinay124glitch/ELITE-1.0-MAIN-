@@ -11,7 +11,10 @@ const menus = {
     ],
     participant: [
         { id: 'dashboard', label: 'My Events', icon: 'fa-calendar' },
-        { id: 'teams', label: 'My Teams', icon: 'fa-users' }
+        { id: 'browse', label: 'Browse Events', icon: 'fa-search' },
+        { id: 'teams', label: 'My Teams', icon: 'fa-users' },
+        { id: 'notifications', label: 'Notifications', icon: 'fa-bell' },
+        { id: 'qr-scanner', label: 'Check-in Scanner', icon: 'fa-qrcode' }
     ]
 };
 
@@ -40,7 +43,10 @@ export function renderSidebar(navigateCallback) {
                     <li>
                         <button onclick="window.navigate('${item.id}')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg ${state.currentView === item.id ? 'active' : 'text-gray-600 dark:text-gray-400'}">
                             <i class="fas ${item.icon} w-5"></i>
-                            <span class="font-medium">${item.label}</span>
+                            <span class="font-medium flex-1">${item.label}</span>
+                            ${item.id === 'notifications' && state.notifications.filter(n => !n.read).length > 0 ? `
+                                <span class="min-w-[20px] h-5 px-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">${state.notifications.filter(n => !n.read).length}</span>
+                            ` : ''}
                         </button>
                     </li>
                 `).join('')}

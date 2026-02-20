@@ -13,9 +13,8 @@ export function renderHeader() {
             </div>
 
             <div class="flex items-center gap-4">
-                ${state.currentUser.role === 'admin' ? `
                 <div class="relative">
-                    <button onclick="window.toggleNotifications()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative">
+                    <button onclick="window.navigate('notifications')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative">
                         <i class="fas fa-bell text-gray-600 dark:text-gray-300"></i>
                         ${state.notifications.filter(n => !n.read).length > 0 ? `
                             <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center notification-badge">
@@ -24,7 +23,7 @@ export function renderHeader() {
                         ` : ''}
                     </button>
                 </div>
-                ` : ''}
+
 
                 <div class="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700">
                     <div class="text-right hidden sm:block">

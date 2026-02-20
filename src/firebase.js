@@ -2,22 +2,24 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration using Vite environment variables
 const firebaseConfig = {
-    apiKey: "AIzaSyC_aES8Eg2pweGJMJ1A325rJapqk4SlQ9Y",
-    authDomain: "elite-2037e.firebaseapp.com",
-    projectId: "elite-2037e",
-    storageBucket: "elite-2037e.firebasestorage.app",
-    messagingSenderId: "417508742431",
-    appId: "1:417508742431:web:8cf5d161e1449aa33c0c2a",
-    measurementId: "G-M2G2EYB7S0"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
-export { signInWithPopup, signOut, onAuthStateChanged };
+export {
+    auth, googleProvider,
+    signInWithPopup, signOut, onAuthStateChanged
+};

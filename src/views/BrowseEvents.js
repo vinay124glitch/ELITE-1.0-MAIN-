@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { showToast } from '../utils/ui.js';
 import { generateTicketPDF } from '../utils/pdf.js';
+import { dbOps } from '../db.js';
 
 export function renderBrowseEvents() {
     return `
@@ -19,7 +20,7 @@ export function renderBrowseEvents() {
             <!-- Events Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="browseEventsGrid">
                 ${state.events.map(event => {
-        const isRegistered = state.registrations.some(r => r.eventId === event.id && r.userId === state.currentUser?.id);
+        const isRegistered = state.registrations.some(r => String(r.eventId) === String(event.id) && String(r.userId) === String(state.currentUser?.id));
         const spotsLeft = event.maxParticipants - event.registered;
 
         return `
@@ -43,7 +44,7 @@ export function renderBrowseEvents() {
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-map-marker-alt text-red-500"></i>
-                                        <span>${event.venue}</span>
+                                        <span class="truncate">${event.venue.startsWith('http') ? `<a href="${event.venue}" target="_blank" class="text-blue-500 hover:underline">Join Link</a>` : event.venue}</span>
                                     </div>
                                 </div>
                                 
@@ -52,7 +53,7 @@ export function renderBrowseEvents() {
                                         <span class="text-sm text-gray-600 dark:text-gray-400">${event.registered} registered</span>
                                         <span class="text-sm font-bold ${spotsLeft < 20 ? 'text-red-600' : 'text-green-600'}">${spotsLeft} spots left</span>
                                     </div>
-                                    <button onclick="window.registerForEvent(${event.id})" 
+                                    <button onclick="window.registerForEvent('${event.id}')" 
                                         class="w-full py-2 rounded-lg font-medium transition-all ${isRegistered ? 'bg-green-100 text-green-700 cursor-default' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg'}">
                                         ${isRegistered ? '<i class="fas fa-check mr-2"></i>Registered' : 'Register Now'}
                                     </button>
@@ -66,15 +67,14 @@ export function renderBrowseEvents() {
     `;
 }
 
-window.registerForEvent = (eventId) => {
-    const isRegistered = state.registrations.some(r => r.eventId === eventId && r.userId === state.currentUser?.id);
+window.registerForEvent = async (eventId) => {
+    const isRegistered = state.registrations.some(r => String(r.eventId) === String(eventId) && String(r.userId) === String(state.currentUser?.id));
     if (isRegistered) {
         showToast('Already registered!', 'info');
         return;
     }
 
     const reg = {
-        id: Date.now(),
         eventId: eventId,
         userId: state.currentUser?.id,
         name: state.currentUser?.name,
@@ -84,23 +84,25 @@ window.registerForEvent = (eventId) => {
         registrationDate: new Date().toISOString().split('T')[0]
     };
 
-    state.registrations = [...state.registrations, reg];
+    try {
+        await dbOps.addRegistration(reg);
 
-    // Update event registration count
-    const events = [...state.events];
-    const eventIndex = events.findIndex(e => e.id === eventId);
-    if (eventIndex !== -1) {
-        events[eventIndex].registered++;
-        state.events = events;
+        // Update event registration count
+        const event = state.events.find(e => String(e.id) === String(eventId));
+        if (event) {
+            await dbOps.updateEvent(eventId, { registered: (event.registered || 0) + 1 });
+        }
+
+        showToast('Successfully registered!', 'success');
+
+        // Automatically generate and download PDF ticket
+        if (event) {
+            generateTicketPDF(reg, event);
+        }
+
+        window.navigate('dashboard');
+    } catch (error) {
+        showToast('Failed to register', 'error');
     }
-
-    showToast('Successfully registered!', 'success');
-
-    // Automatically generate and download PDF ticket
-    const event = state.events.find(e => e.id === eventId);
-    if (event) {
-        generateTicketPDF(reg, event);
-    }
-
-    window.navigate('dashboard');
 };
+

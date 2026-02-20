@@ -29,7 +29,7 @@ export function renderRegistrations() {
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             ${state.registrations.map(reg => {
-        const event = state.events.find(e => e.id === reg.eventId);
+        const event = state.events.find(e => String(e.id) === String(reg.eventId));
         return `
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -43,9 +43,9 @@ export function renderRegistrations() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">${event?.title || 'Unknown'}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">${state.events.find(e => String(e.id) === String(reg.eventId))?.title || 'Unknown'}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <button onclick="window.toggleRegistrationStatus(${reg.id})" class="px-2 py-1 rounded-full text-xs font-medium ${reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} hover:opacity-80 transition-opacity">
+                                            <button onclick="window.toggleRegistrationStatus('${reg.id}')" class="px-2 py-1 rounded-full text-xs font-medium ${reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} hover:opacity-80 transition-opacity">
                                                 ${reg.status}
                                             </button>
                                         </td>
@@ -53,13 +53,14 @@ export function renderRegistrations() {
                                             <i class="fas ${reg.checkIn ? 'fa-check-circle text-green-500' : 'fa-times-circle text-gray-300'}"></i>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="window.deleteRegistration(${reg.id})" class="text-red-600 hover:text-red-900 ml-3">
+                                            <button onclick="window.deleteRegistration('${reg.id}')" class="text-red-600 hover:text-red-900 ml-3">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 `;
     }).join('')}
+
                         </tbody>
                     </table>
                 </div>

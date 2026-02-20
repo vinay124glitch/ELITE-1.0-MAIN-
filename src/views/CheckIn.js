@@ -1,102 +1,174 @@
 import { state } from '../state.js';
 import { showToast } from '../utils/ui.js';
+import { dbOps } from '../db.js';
 
 export function renderCheckIn() {
     return `
         <div class="space-y-6 animate-fade-in">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Manual Entry -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 flex flex-col justify-center">
-                    <div class="text-center mb-6">
-                        <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                            <i class="fas fa-keyboard text-2xl"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Manual Check-in</h3>
-                        <p class="text-gray-500 dark:text-gray-400">Enter participant email or registration ID</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="checkInInput" placeholder="e.g. participant@example.com" 
-                            class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                        <button onclick="window.manualCheckIn()" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
-                            Check In
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Simulation Info -->
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-lg p-8 text-white relative overflow-hidden group">
-                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                    <div class="relative z-10">
-                        <h3 class="text-2xl font-bold mb-4">QR System Active</h3>
-                        <div class="bg-white p-4 rounded-xl w-48 h-48 mx-auto mb-6">
-                            <i class="fas fa-qrcode text-black text-[12rem] flex items-center justify-center"></i>
-                        </div>
-                        <p class="text-center text-gray-400 text-sm">Scan participant QR codes at the entrance to verify registration and mark attendance.</p>
-                    </div>
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+                    <p class="text-3xl font-bold text-blue-600">${state.registrations.length}</p>
+                    <p class="text-xs text-gray-500 mt-1">Total Registered</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+                    <p class="text-3xl font-bold text-green-600">${state.registrations.filter(r => r.checkIn).length}</p>
+                    <p class="text-xs text-gray-500 mt-1">Checked In</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+                    <p class="text-3xl font-bold text-orange-500">${state.registrations.filter(r => !r.checkIn).length}</p>
+                    <p class="text-xs text-gray-500 mt-1">Pending</p>
                 </div>
             </div>
 
-            <!-- Recent Check-ins -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Live Check-in Feed</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Left: Event QR Codes -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-1 flex items-center gap-2">
+                        <i class="fas fa-qrcode text-blue-500"></i> Event QR Codes
+                    </h3>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 mb-4">Display these codes at the venue. Participants scan them to auto check-in.</p>
+
+                    <!-- Event selector -->
+                    <div class="mb-4">
+                        <select id="qrEventSelect" onchange="window.generateAdminQR()" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Select an Event --</option>
+                            ${state.events.map(e => `<option value="${e.id || e._id}">${e.title}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <!-- QR Display Area -->
+                    <div id="adminQrArea" class="flex flex-col items-center justify-center min-h-[260px] bg-gray-50 dark:bg-gray-700/30 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 p-6">
+                        <i class="fas fa-hand-pointer text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-sm text-gray-400">Select an event to generate its QR code</p>
+                    </div>
+
+                    <button id="downloadQrBtn" onclick="window.downloadEventQR()" class="hidden w-full mt-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-download"></i> Download QR Code
+                    </button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Participant</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Event</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+
+                <!-- Right: Manual Entry + Recent Feed -->
+                <div class="space-y-4">
+                    <!-- Manual Check-in -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-keyboard text-purple-500"></i> Manual Check-in
+                        </h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="checkInInput" placeholder="Email or Registration ID"
+                                class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm">
+                            <button onclick="window.manualCheckIn()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm">
+                                Check In
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Check-ins Feed -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-stream text-green-500"></i> Live Check-in Feed
+                        </h3>
+                        <div class="space-y-3 max-h-60 overflow-y-auto">
                             ${state.registrations.filter(r => r.checkIn).slice(-5).reverse().map(reg => {
-        const event = state.events.find(e => e.id === reg.eventId);
+        const event = state.events.find(e => String(e.id) === String(reg.eventId));
         return `
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <p class="font-medium text-gray-900 dark:text-white">${reg.name}</p>
-                                            <p class="text-xs text-gray-500">${reg.email}</p>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">${event?.title || 'Unknown'}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="flex items-center gap-2 text-green-600 text-sm font-bold">
-                                                <i class="fas fa-check-circle"></i> Checked In
-                                            </span>
-                                        </td>
-                                    </tr>
-                                `;
-    }).join('')}
-                        </tbody>
-                    </table>
+                                <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                    <div class="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                                        ${(reg.name || '?').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">${reg.name || 'Anonymous'}</p>
+                                        <p class="text-xs text-gray-500 truncate">${event?.title || 'Unknown Event'}</p>
+                                    </div>
+                                    <span class="text-green-500 text-xs font-bold flex items-center gap-1 flex-shrink-0">
+                                        <i class="fas fa-check-circle"></i> In
+                                    </span>
+                                </div>`;
+    }).join('') || `
+                                <div class="text-center py-4 text-gray-400">
+                                    <i class="fas fa-clock text-2xl mb-2"></i>
+                                    <p class="text-sm">No check-ins yet</p>
+                                </div>`}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 }
 
-window.manualCheckIn = () => {
-    const input = document.getElementById('checkInInput').value.toLowerCase();
+// ── Generate QR Code for selected event ──
+window.generateAdminQR = () => {
+    const eventId = document.getElementById('qrEventSelect').value;
+    const area = document.getElementById('adminQrArea');
+    const dlBtn = document.getElementById('downloadQrBtn');
+
+    if (!eventId) {
+        area.innerHTML = `<i class="fas fa-hand-pointer text-4xl text-gray-300 mb-3"></i>
+            <p class="text-sm text-gray-400">Select an event to generate its QR code</p>`;
+        dlBtn.classList.add('hidden');
+        return;
+    }
+
+    const event = state.events.find(e => String(e.id || e._id) === String(eventId));
+    const payload = JSON.stringify({ type: 'event_checkin', eventId: eventId });
+
+    area.innerHTML = `
+        <p class="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">${event?.title || 'Event'}</p>
+        <div id="qrCodeCanvas" class="bg-white p-3 rounded-xl shadow-md"></div>
+        <p class="text-xs text-gray-400 mt-3">Participants scan this to check in</p>`;
+
+    // Generate QR code using QRCode.js
+    setTimeout(() => {
+        new QRCode(document.getElementById('qrCodeCanvas'), {
+            text: payload,
+            width: 200,
+            height: 200,
+            colorDark: '#1e293b',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        dlBtn.classList.remove('hidden');
+        window._currentQrEventId = eventId;
+    }, 50);
+};
+
+// ── Download QR code as image ──
+window.downloadEventQR = () => {
+    const canvas = document.querySelector('#qrCodeCanvas canvas') ||
+        document.querySelector('#qrCodeCanvas img');
+    if (!canvas) return;
+    const event = state.events.find(e => String(e.id || e._id) === String(window._currentQrEventId));
+    const link = document.createElement('a');
+    link.download = `${event?.title?.replace(/\s+/g, '_') || 'event'}_QR.png`;
+    if (canvas.tagName === 'CANVAS') {
+        link.href = canvas.toDataURL('image/png');
+    } else {
+        link.href = canvas.src;
+    }
+    link.click();
+};
+
+// ── Manual Check-in ──
+window.manualCheckIn = async () => {
+    const input = document.getElementById('checkInInput').value.trim().toLowerCase();
     if (!input) return;
 
-    const regIndex = state.registrations.findIndex(r => r.email.toLowerCase() === input || r.id.toString() === input);
+    const reg = state.registrations.find(r =>
+        (r.email && r.email.toLowerCase() === input) || String(r.id) === input
+    );
 
-    if (regIndex === -1) {
-        showToast('Participant not found!', 'error');
-        return;
+    if (!reg) { showToast('Participant not found!', 'error'); return; }
+    if (reg.checkIn) { showToast('Already checked in!', 'info'); return; }
+
+    try {
+        await dbOps.updateRegistration(reg.id, { checkIn: true });
+        showToast(`✅ Checked in ${reg.name}!`, 'success');
+        document.getElementById('checkInInput').value = '';
+    } catch (error) {
+        showToast('Failed to check in participant', 'error');
     }
-
-    if (state.registrations[regIndex].checkIn) {
-        showToast('Already checked in!', 'info');
-        return;
-    }
-
-    const updatedRegs = [...state.registrations];
-    updatedRegs[regIndex].checkIn = true;
-    state.registrations = updatedRegs;
-
-    showToast(`Checked in ${updatedRegs[regIndex].name}!`, 'success');
-    document.getElementById('checkInInput').value = '';
-    window.navigate('checkin');
 };

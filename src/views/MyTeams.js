@@ -1,8 +1,9 @@
 import { state } from '../state.js';
 import { showToast } from '../utils/ui.js';
+import { dbOps } from '../db.js';
 
 export function renderMyTeams() {
-    const myTeams = state.teams.filter(t => t.members.some(m => m.id === state.currentUser?.id));
+    const myTeams = state.teams.filter(t => t.members.some(m => String(m.id) === String(state.currentUser?.id)));
 
     return `
         <div class="space-y-6 animate-fade-in">
@@ -24,8 +25,8 @@ export function renderMyTeams() {
             ` : `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${myTeams.map(team => {
-        const event = state.events.find(e => e.id === team.eventId);
-        const isLead = team.members[0]?.id === state.currentUser?.id;
+        const event = state.events.find(e => String(e.id) === String(team.eventId));
+        const isLead = team.members[0] && String(team.members[0].id) === String(state.currentUser?.id);
 
         return `
                             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 card-hover">
@@ -84,7 +85,7 @@ export function renderMyTeams() {
     `;
 }
 
-window.joinTeam = () => {
+window.joinTeam = async () => {
     const code = document.getElementById('joinCodeInput')?.value.toUpperCase();
     if (!code) return;
 
@@ -95,13 +96,13 @@ window.joinTeam = () => {
     }
 
     // Check if participant is registered for the team's event
-    const isRegistered = state.registrations.some(r => r.eventId === team.eventId && r.userId === state.currentUser?.id);
+    const isRegistered = state.registrations.some(r => String(r.eventId) === String(team.eventId) && String(r.userId) === String(state.currentUser?.id));
     if (!isRegistered) {
         showToast('You must be registered for this event to join the team!', 'error');
         return;
     }
 
-    if (team.members.some(m => m.id === state.currentUser?.id)) {
+    if (team.members.some(m => String(m.id) === String(state.currentUser?.id))) {
         showToast('Already in this team!', 'info');
         return;
     }
@@ -111,16 +112,19 @@ window.joinTeam = () => {
         return;
     }
 
-    const updatedTeams = [...state.teams];
-    const teamIndex = updatedTeams.findIndex(t => t.id === team.id);
-    updatedTeams[teamIndex].members.push({
+    const updatedMembers = [...team.members, {
         id: state.currentUser?.id,
         name: state.currentUser?.name,
         role: 'Member',
         email: state.currentUser?.email
-    });
+    }];
 
-    state.teams = updatedTeams;
-    showToast(`Joined ${team.name}!`, 'success');
-    window.navigate('teams');
+    try {
+        await dbOps.updateTeam(team.id, { members: updatedMembers });
+        showToast(`Joined ${team.name}!`, 'success');
+        window.navigate('teams');
+    } catch (error) {
+        showToast('Failed to join team', 'error');
+    }
 };
+

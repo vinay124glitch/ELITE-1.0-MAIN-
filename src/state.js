@@ -109,15 +109,16 @@ const defaultNotifications = [
 ];
 
 export const state = new Proxy({
-    currentUser: DataStore.loadPersistent('user', null),
-    events: DataStore.loadPersistent('events', defaultEvents),
-    registrations: DataStore.loadPersistent('registrations', defaultRegistrations),
-    teams: DataStore.loadPersistent('teams', defaultTeams),
-    notifications: DataStore.loadPersistent('notifications', defaultNotifications),
+    currentUser: DataStore.loadPersistent('currentUser', null),
+    events: DataStore.loadPersistent('events', []),
+    registrations: DataStore.loadPersistent('registrations', []),
+    teams: DataStore.loadPersistent('teams', []),
+    notifications: DataStore.loadPersistent('notifications', []),
     users: DataStore.loadPersistent('users', []),
     currentView: 'dashboard',
     darkMode: DataStore.loadPersistent('darkMode', false),
-    sidebarOpen: false
+    sidebarOpen: false,
+    isLoading: true
 }, {
     set(target, prop, value) {
         target[prop] = value;

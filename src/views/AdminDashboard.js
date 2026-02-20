@@ -89,15 +89,15 @@ export function renderAdminDashboard() {
                                 <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                     <div class="flex items-center gap-4">
                                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
-                                            ${reg.name.charAt(0)}
+                                            ${(reg.name || 'A').charAt(0)}
                                         </div>
                                         <div>
-                                            <p class="font-bold text-gray-800 dark:text-white">${reg.name}</p>
-                                            <p class="text-sm text-gray-500">${state.events.find(e => e.id === reg.eventId)?.title || 'Unknown Event'}</p>
+                                            <p class="font-bold text-gray-800 dark:text-white">${reg.name || 'Anonymous'}</p>
+                                            <p class="text-sm text-gray-500">${state.events.find(e => String(e.id) === String(reg.eventId))?.title || 'Unknown Event'}</p>
                                         </div>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
-                                        ${reg.status.toUpperCase()}
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${(reg.status || 'pending') === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                                        ${(reg.status || 'pending').toUpperCase()}
                                     </span>
                                 </div>
                             `).join('')}
@@ -117,6 +117,11 @@ export function renderAdminDashboard() {
                                 <i class="fas fa-bullhorn group-hover:scale-110 transition-transform"></i>
                                 <span>Send Announcement</span>
                             </button>
+                            <button onclick="window.seedSampleData()" class="w-full flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all font-bold group">
+                                <i class="fas fa-database group-hover:rotate-12 transition-transform"></i>
+                                <span>Seed Sample Data</span>
+                            </button>
+
                         </div>
                     </div>
                 </div>
@@ -125,13 +130,22 @@ export function renderAdminDashboard() {
     `;
 }
 
+// Global variables to hold chart instances
+let regChartInstance = null;
+let distChartInstance = null;
+
 export function initAdminCharts() {
     const regCtx = document.getElementById('regChart');
     const distCtx = document.getElementById('distChart');
 
     if (regCtx) {
+        // Destroy existing instance if it exists
+        if (regChartInstance) {
+            regChartInstance.destroy();
+        }
+
         // Mock data for registration daily trends (last 7 days)
-        new Chart(regCtx, {
+        regChartInstance = new Chart(regCtx, {
             type: 'line',
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -160,10 +174,15 @@ export function initAdminCharts() {
     }
 
     if (distCtx) {
+        // Destroy existing instance if it exists
+        if (distChartInstance) {
+            distChartInstance.destroy();
+        }
+
         const types = [...new Set(state.events.map(e => e.type))];
         const counts = types.map(t => state.events.filter(e => e.type === t).length);
 
-        new Chart(distCtx, {
+        distChartInstance = new Chart(distCtx, {
             type: 'doughnut',
             data: {
                 labels: types,
@@ -188,3 +207,4 @@ export function initAdminCharts() {
         });
     }
 }
+

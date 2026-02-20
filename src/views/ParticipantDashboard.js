@@ -1,12 +1,12 @@
 import { state } from '../state.js';
 
 export function renderParticipantDashboard() {
-    const myRegistrations = state.registrations.filter(r => r.userId === state.currentUser?.id);
-    const myTeamsCount = state.teams.filter(t => t.members.some(m => m.id === state.currentUser?.id)).length;
+    const myRegistrations = state.registrations.filter(r => String(r.userId) === String(state.currentUser?.id));
+    const myTeamsCount = state.teams.filter(t => t.members.some(m => String(m.id) === String(state.currentUser?.id))).length;
 
     // Get details for registered events
     const registeredEvents = myRegistrations.map(reg => {
-        const event = state.events.find(e => e.id === reg.eventId);
+        const event = state.events.find(e => String(e.id) === String(reg.eventId));
         return { ...event, reg };
     });
 
@@ -68,12 +68,12 @@ export function renderParticipantDashboard() {
                                     <h4 class="font-bold text-gray-800 dark:text-white">${event.title}</h4>
                                     <div class="flex gap-3 mt-1 text-sm text-gray-500">
                                         <span class="flex items-center gap-1"><i class="fas fa-calendar"></i> ${event.date}</span>
-                                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${event.venue}</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${event.venue.startsWith('http') ? `<a href="${event.venue}" target="_blank" class="text-blue-500 hover:underline">Join Link</a>` : event.venue}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="window.downloadTicket(${event.id})" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold border border-blue-100 dark:border-blue-900/30">
+                                <button onclick="window.downloadTicket('${event.id}')" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold border border-blue-100 dark:border-blue-900/30">
                                     <i class="fas fa-download mr-1"></i> Ticket
                                 </button>
                                 <span class="px-4 py-2 bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-bold border border-green-100 dark:border-green-900/30 flex items-center gap-1">
@@ -89,11 +89,13 @@ export function renderParticipantDashboard() {
 }
 
 window.downloadTicket = (eventId) => {
-    const reg = state.registrations.find(r => r.eventId === eventId && r.userId === state.currentUser?.id);
-    const event = state.events.find(e => e.id === eventId);
+    // Both eventId and r.eventId are now strings from Firestore
+    const reg = state.registrations.find(r => String(r.eventId) === String(eventId) && r.userId === state.currentUser?.id);
+    const event = state.events.find(e => String(e.id) === String(eventId));
     if (reg && event) {
         import('../utils/pdf.js').then(module => {
             module.generateTicketPDF(reg, event);
         });
     }
 };
+
